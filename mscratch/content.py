@@ -8,11 +8,21 @@ class CsvContentExtractor:
     value if the xpath fails and transformation function which changes the data extracted
     by the xpath query. '''
 
-    def __init__(self, csv_delimiter, column_description):
+    def __init__(self, csv_delimiter, column_description, element_list_xpath=None):
         self.delim = csv_delimiter
         self.column_description = column_description
+        self.element_list_xpath = element_list_xpath
 
     def get_csv(self, tree):
+        if self.element_list_xpath:
+            element_list = tree.xpath(self.element_list_xpath)
+            for element in element_list:
+                self.get_csv_single(element)
+            return
+
+        self.get_csv_single(tree)
+
+    def get_csv_single(self, tree):
         c_values = []
         for column in self.column_description:
             c_name = column['name']
