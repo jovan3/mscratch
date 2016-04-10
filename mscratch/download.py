@@ -1,4 +1,3 @@
-import requests
 import hashlib
 import os
 
@@ -7,13 +6,15 @@ from abc import ABCMeta, abstractmethod
 class PageDownloader:
     ''' Uses HTTP client to request web page contents and save it to a file. '''
 
-    def __init__(self, ddir):
+    def __init__(self, ddir, httpclient):
         ''' Initialize PageDownloader.
 
         Parameters:
             dir - directory in which the downloaded page content is saved.
+            httpclient - mscratch.download.HttpClient object (requests.get wrapper)
         '''
         self.dir = ddir
+        self.client = httpclient
         self.create_dir()
 
     def save_file(self, contents, url):
@@ -21,7 +22,7 @@ class PageDownloader:
         with open(file_path, 'w') as outfile:
             outfile.write(contents.decode('utf-8'))
 
-    def download(self, url_gen, http_params, stop_on_exception=False):
+    def download(self, url_gen, stop_on_exception=False):
         ''' Iterates the generate_url generator function of url_gen and downloads the
         contents of the pages of the generated URLs.
 
@@ -29,24 +30,17 @@ class PageDownloader:
             url_gen - <UrlGeneratorBase> URL generator used to generate download URLs.
         '''
         for url in url_gen.generate_url():
-            resp = requests.get(url, headers=http_params.headers, timeout=http_params.timeout)
-            self.save_file(resp.content, url)
+            resp_data = self.client.get(url)
+            self.save_file(resp_data, url)
 
     def create_dir(self):
         if not os.path.isdir(self.dir):
-            os.makedirs(self.dir)
+            if os.path.isabs(self.dir):
+                os.makedirs(self.dir)
+            else:
+                os.makedirs(os.getcwd() + '/' + self.dir)
 
-class HttpClientParams:
-    ''' Class holding parameter values used by requests http clients. '''
 
-    def __init__(self, headers=None, timeout=40):
-        '''
-        Parameters:
-            headers - <dict> HTTP request headers
-            timeout - <int> timeout in seconds
-        '''
-        self.headers = headers
-        self.timeout = timeout
 
 class UrlGeneratorBase(metaclass=ABCMeta):
 
@@ -97,12 +91,13 @@ class RangeUrlGenerator(UrlGeneratorBase):
 
     def get_current_value(self):
         return self.current
-
 '''
 if __name__ == '__main__':
-    url = 'https://dubai.dubizzle.com/community/car-lift/?page={:s}&is_basic_search_widget=0&is_search=1&added__gte=1&car_lift_from=&car_lift_to=&ot=asc&o=2'
+    url = 'http://example.org/{:s}'
     r = RangeUrlGenerator(url, 1, 5)
-    p = PageDownloader('zo')
+    from httpclient import HttpClient, HttpClientParams
     htp = HttpClientParams(headers={'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv: 45.0) Gecko/20100101 Firefox/45.0'})
-    p.download(r, htp)
+    client = HttpClient(htp)
+    p = PageDownloader('zo', client)
+    p.download(r)
 '''
