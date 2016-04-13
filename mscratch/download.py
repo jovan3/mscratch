@@ -91,13 +91,16 @@ class RangeUrlGenerator(UrlGeneratorBase):
 
     def get_current_value(self):
         return self.current
-'''
-if __name__ == '__main__':
-    url = 'http://example.org/{:s}'
-    r = RangeUrlGenerator(url, 1, 5)
-    from httpclient import HttpClient, HttpClientParams
-    htp = HttpClientParams(headers={'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv: 45.0) Gecko/20100101 Firefox/45.0'})
-    client = HttpClient(htp)
-    p = PageDownloader('zo', client)
-    p.download(r)
-'''
+
+class ListUrlGenerator(UrlGeneratorBase):
+
+    def __init__(self, url_list):
+        self.url_list = url_list
+        super(ListUrlGenerator, self).__init__(None)
+
+    def generate_url(self):
+        while len(self.url_list):
+            yield self.url_list.pop()
+
+    def get_current_value(self):
+        return self.url_list[-1]
