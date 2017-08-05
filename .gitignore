@@ -46,3 +46,5 @@ pip-log.txt
 
 .~*#
 *.xls
+
+/.cache
